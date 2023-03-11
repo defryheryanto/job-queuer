@@ -1,6 +1,8 @@
 package queue
 
+import "context"
+
 type Task interface {
 	GetTitle() string
-	Do() error
+	Do(ctx context.Context) error
 }

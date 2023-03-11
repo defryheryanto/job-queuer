@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"log"
 	"sync"
 	"time"
@@ -47,7 +48,7 @@ func (q *Queuer) first() Task {
 	return q.tasks[0]
 }
 
-func (q *Queuer) Run() {
+func (q *Queuer) Run(ctx context.Context) {
 	activeTaskChan := make(chan Task, q.maxActiveTask)
 
 	go func() {
@@ -58,22 +59,26 @@ func (q *Queuer) Run() {
 				continue
 			}
 
-			activeTaskChan <- task
-			log.Printf("task %s registered", task.GetTitle())
-			q.pop()
+			select {
+			case <-ctx.Done():
+				return
+			case activeTaskChan <- task:
+				log.Printf("task %s registered", task.GetTitle())
+				q.pop()
 
-			go func() {
-				defer func() {
-					<-activeTaskChan
+				go func() {
+					defer func() {
+						<-activeTaskChan
+					}()
+					log.Printf("running task %s", task.GetTitle())
+					err := task.Do(ctx)
+					if err != nil {
+						log.Printf("error running task %s with error %v\n", task.GetTitle(), err)
+						return
+					}
+					log.Printf("success: %s", task.GetTitle())
 				}()
-				log.Printf("running task %s", task.GetTitle())
-				err := task.Do()
-				if err != nil {
-					log.Printf("error running task %s with error %v\n", task.GetTitle(), err)
-					return
-				}
-				log.Printf("success: %s", task.GetTitle())
-			}()
+			}
 		}
 	}()
 }
