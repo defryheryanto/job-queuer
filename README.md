@@ -13,7 +13,8 @@ Refer to this code
 ```
 jobQueuer.Run(context.Background())
 ```
-This will run the queue in a separate goroutine (in background), any Task that will be pushed before or after the Run() function will be executed
+This will run the queue in a separate goroutine (in background), any Task that will be pushed before or after the Run() function will be executed.
+This function WILL NOT locking
 
 ### Adding Task to queue
 This package will use the Task interface for the queued object
