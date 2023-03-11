@@ -19,9 +19,7 @@ This function WILL NOT locking
 ### Adding Task to queue
 This package will use the Task interface for the queued object
 
-For the first step, let's make a struct that implements the Task interface<br>
-`GetTitle()` will be logged into the terminal when the Task is queued, being run, and done (failed and finished)<br>
-`Do(context.Context)` will be executed when the Task is being run<br>
+<b>For the first step</b>, let's make a struct that implements the Task interface
 ```
 type SimpleTask struct {}
 func(s *SimpleTask) GetTitle() string {
@@ -32,8 +30,10 @@ func (s *SimpleTask) Do(ctx context.Context) error {
 	return nil
 }
 ```
+`GetTitle()` will be logged into the terminal when the Task is queued, being run, and done (failed and finished)<br>
+`Do(context.Context)` will be executed when the Task is being run<br>
 
-The second step, we create a SimpleTask object and pass it into the queuer
+<b>The second step</b>, we create a SimpleTask object and pass it into the queuer
 ```
 simpleTask := &SimpleTask{}
 jobQueuer.Push(simpleTask)
