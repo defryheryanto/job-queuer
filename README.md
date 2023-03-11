@@ -39,3 +39,6 @@ simpleTask := &SimpleTask{}
 jobQueuer.Push(simpleTask)
 ```
 This code will push a SimpleTask (implements the Task interface) to the queuer. The task will be executed according to the queue and when there is an available worker.
+
+### Full Example Code
+Can visit [this directory](https://github.com/defryheryanto/job-queuer/blob/main/example/example.go) to see the complete usage for this package
