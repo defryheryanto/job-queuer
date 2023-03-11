@@ -1,14 +1,13 @@
 package queue
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
 )
 
 type Queuer struct {
-	mutex         sync.Mutex
+	mutex         sync.RWMutex
 	tasks         []Task
 	maxActiveTask int
 }
@@ -18,46 +17,29 @@ func NewQueuer(maxSize int) *Queuer {
 		maxSize = 10
 	}
 	return &Queuer{
-		mutex:         sync.Mutex{},
+		mutex:         sync.RWMutex{},
 		tasks:         []Task{},
 		maxActiveTask: maxSize,
 	}
 }
 
-func (q *Queuer) Add(task Task) error {
+func (q *Queuer) Push(task Task) error {
 	q.mutex.Lock()
-	_, existingTask := q.getTask(task)
-	if existingTask != nil {
-		return fmt.Errorf("task with title %s is already exists", task.GetTitle())
-	}
-
 	q.tasks = append(q.tasks, task)
 	q.mutex.Unlock()
 	return nil
 }
 
-func (q *Queuer) Remove(task Task) {
+func (q *Queuer) pop() {
 	q.mutex.Lock()
-	indexTask, _ := q.getTask(task)
-	if indexTask == -1 {
-		return
-	}
-
-	q.tasks = append(q.tasks[:indexTask], q.tasks[indexTask+1:]...)
+	q.tasks = q.tasks[1:]
 	q.mutex.Unlock()
 }
 
-func (q *Queuer) getTask(task Task) (int, Task) {
-	for i, t := range q.tasks {
-		if t.GetTitle() == task.GetTitle() {
-			return i, t
-		}
-	}
+func (q *Queuer) first() Task {
+	q.mutex.RLock()
+	defer q.mutex.RUnlock()
 
-	return -1, nil
-}
-
-func (q *Queuer) getFirstTask() Task {
 	if len(q.tasks) == 0 {
 		return nil
 	}
@@ -70,15 +52,15 @@ func (q *Queuer) Run() {
 
 	go func() {
 		for {
-			task := q.getFirstTask()
+			task := q.first()
 			if task == nil {
-				time.Sleep(2 * time.Second)
+				<-time.After(2 * time.Second)
 				continue
 			}
 
 			activeTaskChan <- task
 			log.Printf("task %s registered", task.GetTitle())
-			q.Remove(task)
+			q.pop()
 
 			go func() {
 				defer func() {
